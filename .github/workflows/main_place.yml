@@ -2,7 +2,7 @@
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
 # .github/workflows/deploy.yml
-name: Node.js CI/CD
+name: Node.js CI
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Set up Node.js
@@ -21,17 +21,11 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install backend dependencies
-        working-directory: backend
-        run: npm install
-
-      - name: Build backend
-        working-directory: backend
-        run: npm run build
-
-      - name: Zip artifact for deployment
-        working-directory: backend
-        run: zip -r ../app.zip .
+      - name: Zip the backend
+        run: |
+          mkdir temp
+          echo "hello" > temp/test.txt
+          zip -r app.zip temp
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
