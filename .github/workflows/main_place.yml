@@ -10,35 +10,39 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Use Node.js
+    - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18'  # Or your preferred version
+        node-version: '18'
 
     - name: Install dependencies
       run: npm install
-      working-directory: ./backend  # <-- Add this
+      working-directory: ./backend
 
     - name: Build the project
       run: npm run build
-      working-directory: ./backend  # <-- Add this
+      working-directory: ./backend
 
     - name: Zip artifact for deployment
       run: zip -r build.zip .
-      working-directory: ./backend  # <-- Add this
+      working-directory: ./backend
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
 
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v2
       with:
-        app-name: <your-app-service-name>
-        slot-name: Production
-        package: ./backend/build.zip  # Adjust path if needed
+        app-name: place
+        package: ./backend/build.zip
 
 
   deploy:
