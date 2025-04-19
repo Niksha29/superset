@@ -1,81 +1,50 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: Build and deploy Node.js app to Azure Web App - place
+name: Build and deploy Node.js app to Azure Web App
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-
-    - name: Install dependencies
-      run: npm install
-      working-directory: ./backend
-
-    - name: Build the project
-      run: npm run build
-      working-directory: ./backend
-
-    - name: Zip artifact for deployment
-      run: zip -r build.zip .
-      working-directory: ./backend
-
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-
-    - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: place
-        package: ./backend/build.zip
-
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./backend
+      - name: Build the project
+        run: npm run build
+        working-directory: ./backend
+      - name: Zip artifact for deployment
+        run: zip -r build.zip .
+        working-directory: ./backend
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifact
+          path: ./backend/build.zip
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    environment:
-      name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
-
     steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
+      - name: Download artifact
+        uses: actions/download-artifact@v3
         with:
-          name: node-app
+          name: build-artifact
 
-      - name: Unzip artifact for deployment
-        run: unzip release.zip
-      
-      - name: Login to Azure
-        uses: azure/login@v2
+      - name: Azure Login
+        uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_39D35038051F44F8844FE5C2793D40FB }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_9087B97DFAEB4FD7B0C68B436AE484CD }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_E64631BADA5040CAAF617A0469376C99 }}
+          creds: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
 
-      - name: 'Deploy to Azure Web App'
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
         with:
-          app-name: 'place'
-          slot-name: 'Production'
-          package: .
-          
+          app-name: place
+          package: build.zip
